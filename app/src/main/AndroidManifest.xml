@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+
+    package="com.example.myfitnessnotebook_v1">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application
+        android:usesCleartextTraffic="true"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="MyFitnessNoteBook_v1"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyFitnessNoteBook">
+        <activity
+            android:name=".EditarEjercicio"
+            android:exported="false" />
+        <activity
+            android:name=".VerEditarRutina"
+            android:exported="false" />
+        <activity
+            android:name=".SignUpActivity"
+            android:exported="false" />
+        <activity
+            android:name=".addEjercicio"
+            android:exported="false"
+            android:label="@string/title_activity_add_ejercicio"
+            android:theme="@style/Theme.MyFitnessNoteBook.NoActionBar" />
+        <activity
+
+            android:name=".MainActivity"
+            android:exported="false"
+            android:label="@string/title_activity_login"
+            android:theme="@style/Theme.MyFitnessNoteBook.NoActionBar" />
+        <activity
+            android:name=".addRoutine"
+            android:exported="false"
+            android:label="@string/title_activity_add_routine"
+            android:theme="@style/Theme.MyFitnessNoteBook.NoActionBar" />
+        <activity
+            android:name=".Login"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
