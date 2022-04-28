@@ -2,6 +2,7 @@ package com.example.myfitnessnotebook_v1;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
+import androidx.work.Worker;
 
 
 import android.app.AlertDialog;
@@ -9,9 +10,13 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.Image;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -19,10 +24,19 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
+import android.util.Base64;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -53,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         fab2 = (FloatingActionButton) findViewById(R.id.fab2);
         fab3 = (FloatingActionButton) findViewById(R.id.fab3);
 
-        ImageView perfil = (ImageView) findViewById(R.id.perfil);
+        perfil = (ImageView) findViewById(R.id.perfil);
 
         btnLogout = (Button) findViewById(R.id.btn_logout);
         btnLogout.setOnClickListener(new View.OnClickListener() {
@@ -107,10 +121,15 @@ public class MainActivity extends AppCompatActivity {
                 closeFABMenu();
             }
         });
+        System.out.println("CARGAR FOTO DE PERFIL");
+        cargarFotoPerfil(user);
+        System.out.println("CARGADA FOTO DE PERFIL");
         fab3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Toast.makeText(MainActivity.this, "Se activa la camara y se cambia la foto de perfil", Toast.LENGTH_SHORT).show();
+                Intent elIntentFoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(elIntentFoto, 777);
                 closeFABMenu();
             }
 
@@ -139,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
             //arrayAdapter = new ArrayAdapter(MainActivity.this, android.R.layout.simple_list_item_1, rutinas);
 
             rutinasArray = this.convertirArray(rutinas);
-        }else{
+        } else {
             rutinasArray = new String[0];
         }
         int[] imagenes = {R.drawable.zyzz};
@@ -244,6 +263,30 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
+        if (requestCode == 777) { //Recogemos la miniatura, la almacenamos en la BBDD del servidor
+            if (resultCode == RESULT_OK) {
+                Bundle extras = data.getExtras();
+                Bitmap laMiniatura = (Bitmap) extras.get("data");
+                //redimensionamos
+                int anchoDestino = perfil.getWidth();
+                int altoDestino = perfil.getHeight();
+                int anchoImagen = laMiniatura.getWidth();
+                int altoImagen = laMiniatura.getHeight();
+                float ratioImagen = (float) anchoImagen / (float) altoImagen;
+                float ratioDestino = (float) anchoDestino / (float) altoDestino;
+                int anchoFinal = anchoDestino;
+                int altoFinal = altoDestino;
+                if (ratioDestino > ratioImagen) {
+                    anchoFinal = (int) ((float) altoDestino * ratioImagen);
+                } else {
+                    altoFinal = (int) ((float) anchoDestino / ratioImagen);
+                }
+                Bitmap bitmapRedimensionado = Bitmap.createScaledBitmap(laMiniatura, anchoFinal, altoFinal, true);
+                insertImagen(user, bitmapRedimensionado);
+                cargarFotoPerfil(user);
+            }
+
+        }
     }
 
     public String[] convertirArray(ArrayList<String> lista) {
@@ -281,4 +324,55 @@ public class MainActivity extends AppCompatActivity {
         fab3.animate().translationY(0);
     }
 
+    private void insertImagen(String usuario, Bitmap laMiniatura) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        laMiniatura.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byte[] fotoTransformada = stream.toByteArray();
+        if(gestorBD.getImagen(usuario)!=null){
+            gestorBD.clearImagen(user);
+        }
+        gestorBD.insertarImagen(usuario, fotoTransformada);
+        Uri.Builder builder = new Uri.Builder();
+        builder.appendQueryParameter("usuario", usuario);
+        builder.appendQueryParameter("titulo", "fotoPerfil");
+        Data datos = new Data.Builder().putString("usuario", usuario).putString("titulo", "fotoPerfil").build();
+        OneTimeWorkRequest otwr = new OneTimeWorkRequest.Builder(phpInsertImagen.class).setInputData(datos).build();
+        WorkManager.getInstance(MainActivity.this).getWorkInfoByIdLiveData(otwr.getId()).observe(MainActivity.this, new Observer<WorkInfo>() {
+            @Override
+            public void onChanged(WorkInfo workInfo) {
+                if (workInfo != null && workInfo.getState().isFinished()) {
+                    Boolean resultadoPhp = workInfo.getOutputData().getBoolean("exito", false);
+                    System.out.println("RESULTADO INSERT IMAGEN --> " + resultadoPhp);
+                    if (resultadoPhp) {//se logueó correctamente
+                        Intent i = getIntent();
+                        startActivity(i);
+                        finish();
+                    }
+                }
+            }
+        });
+        WorkManager.getInstance(MainActivity.this).enqueue(otwr);
+
+    }
+
+    public void cargarFotoPerfil(String user) {
+        Data datos = new Data.Builder().putString("usuario", user).build();
+        OneTimeWorkRequest otwr = new OneTimeWorkRequest.Builder(phpSelectImagen.class).setInputData(datos).build();
+        WorkManager.getInstance(MainActivity.this).getWorkInfoByIdLiveData(otwr.getId()).observe(MainActivity.this, new Observer<WorkInfo>() {
+            @Override
+            public void onChanged(WorkInfo workInfo) {
+                if (workInfo != null && workInfo.getState().isFinished()) {
+                    Boolean resultadoPhp = workInfo.getOutputData().getBoolean("exito", false);
+                    System.out.println("RESULTADO INSERT IMAGEN --> " + resultadoPhp);
+                    if (resultadoPhp) {
+                        byte[] decodificado = gestorBD.getImagen(user);
+                        Bitmap elBitmap = BitmapFactory.decodeByteArray(decodificado, 0, decodificado.length);
+                        perfil.setImageBitmap(elBitmap);
+
+                    }
+                }
+            }
+        });
+        WorkManager.getInstance(MainActivity.this).enqueue(otwr);
+    }
 }

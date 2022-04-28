@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -22,9 +23,9 @@ public class miBD extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        /*Tabla Users:
+        /*Tabla Imagen:
          * correo    contra*/
-        //sqLiteDatabase.execSQL("CREATE TABLE Users ('correo' VARCHAR(255) PRIMARY KEY NOT NULL, 'contra' VARCHAR(255))");
+        sqLiteDatabase.execSQL("CREATE TABLE Imagen ('usuario' VARCHAR(255) PRIMARY KEY NOT NULL, 'imagen' blob)");
         /*Tabla Rutina:
          * nombre */
         sqLiteDatabase.execSQL("CREATE TABLE Rutinas ('nombre' VARCHAR(255) PRIMARY KEY NOT NULL, 'usuario' VARCHAR(255))");
@@ -40,7 +41,35 @@ public class miBD extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
 
     }
+    public byte[] getImagen(String user){
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT * FROM Imagen WHERE usuario=?";
+        Cursor c = db.rawQuery(query, new String[]{user});
+        byte[] imagen = null;
+        while (c.moveToNext()) {
+            int i = c.getColumnIndex("imagen");
+            imagen = c.getBlob(i);
+        }
+        c.close();
+        return imagen;
+    }
 
+    public void clearImagen(String user){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete("Imagen","usuario=?",new String[]{String.valueOf(user)});
+        db.close();
+    }
+
+    public void insertarImagen(String user,byte[] foto){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String sql = "INSERT INTO Imagen VALUES (?,?)";
+        SQLiteStatement sqLiteStatement = db.compileStatement(sql);
+        sqLiteStatement.clearBindings();
+        sqLiteStatement.bindString(1,user);
+        sqLiteStatement.bindBlob(2,foto);
+        sqLiteStatement.executeInsert();
+        db.close();
+    }
     public ArrayList<String> getRutinas(String usuario) {
         /*Devuelve los nombres de las rutinas*/
         ArrayList<String> rutinas = new ArrayList<>();
