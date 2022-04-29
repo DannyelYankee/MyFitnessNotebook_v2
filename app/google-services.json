@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "125079269062",
+    "project_id": "myfitnessnotebook",
+    "storage_bucket": "myfitnessnotebook.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125079269062:android:0fe8f6ec30eb067e8d71c7",
+        "android_client_info": {
+          "package_name": "com.example.myfitnessnotebook_v1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "125079269062-29usfeigr92k9nq7grolasog2intu5op.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClHFIqC-a5v4dJSifJg9SW72rA018Cs0o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "125079269062-29usfeigr92k9nq7grolasog2intu5op.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
