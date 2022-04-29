@@ -47,6 +47,7 @@ public class SignUpActivity extends AppCompatActivity {
         username = usernameText.getText().toString();
         psswd1 = psswd1Text.getText().toString();
         psswd2 = psswd2Text.getText().toString();
+        //Obtenemos el token de Firebase para almacenarlo en la BBDD
         FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(instanceIdResult -> token = instanceIdResult.getToken());
 
         gestorBD = new miBD(this, "MyFitnessNotebook", null, 1);
@@ -56,8 +57,6 @@ public class SignUpActivity extends AppCompatActivity {
         btnSU.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //guardamos el token
-
 
                 username = usernameText.getText().toString();
                 psswd1 = psswd1Text.getText().toString();

@@ -2,10 +2,12 @@ package com.example.myfitnessnotebook_v1;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.work.Worker;
 
 
 import android.app.AlertDialog;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.DialogInterface;
@@ -106,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
 
                         /*Preparamos notificación que saldrá con un icono de Warning para avisar de que la BBDD ha sido vaciada por completo*/
                         System.out.println("BORRAR TODA BBDD");
+                        /*
                         NotificationManager elManager = (NotificationManager) getSystemService(MainActivity.this.NOTIFICATION_SERVICE);
                         NotificationCompat.Builder elBuilder = new NotificationCompat.Builder(MainActivity.this, "IdCanal");
 
@@ -118,7 +121,17 @@ public class MainActivity extends AppCompatActivity {
                         elBuilder.setContentText("Se ha vaciado la Base de Datos");
                         elBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
                         elBuilder.setAutoCancel(true);
-                        elManager.notify(1, elBuilder.build());
+                        elManager.notify(1, elBuilder.build());*/
+
+                        final String CHANNEL_ID = "HEADS_UP_NOTIFICATION";
+                        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "HEADS_UP_NOTIFICATION", NotificationManager.IMPORTANCE_HIGH);
+                        getSystemService(NotificationManager.class).createNotificationChannel(channel);
+                        Notification.Builder notificacion = new Notification.Builder(MainActivity.this, CHANNEL_ID);
+                        notificacion.setContentTitle("Base de Datos vaciada");
+                        notificacion.setContentText("Se ha vaciado la Base de Datos");
+                        notificacion.setSmallIcon(R.drawable.ic_launcher_foreground);
+                        notificacion.setAutoCancel(true);
+                        NotificationManagerCompat.from(MainActivity.this).notify(1, notificacion.build());
                     }
                 }).setNegativeButton("No", null).show();
                 closeFABMenu();
@@ -137,10 +150,12 @@ public class MainActivity extends AppCompatActivity {
 
         });
         fab4.setOnClickListener(new View.OnClickListener() {
+            /*Al clickar en este botón, se enviará un mensaje a todos los usuarios que tengan la app instalada.
+            * Un mensaje de motivación para que cojan la pala y se pongan a laburar en su cuerpo*/
             @Override
             public void onClick(View view) {
 
-                Data datos = new Data.Builder().putString("usuario", user).build();
+                Data datos = new Data.Builder().putString("user", user).build();
                 OneTimeWorkRequest otwr = new OneTimeWorkRequest.Builder(phpMensaje.class).setInputData(datos).build();
                 WorkManager.getInstance(MainActivity.this).getWorkInfoByIdLiveData(otwr.getId()).observe(MainActivity.this, new Observer<WorkInfo>() {
                     @Override
@@ -352,6 +367,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void insertImagen(String usuario, Bitmap laMiniatura) {
+        /*Inserta la imagen en la BBDD del servidor*/
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         laMiniatura.compress(Bitmap.CompressFormat.PNG, 100, stream);
         byte[] fotoTransformada = stream.toByteArray();
@@ -383,6 +399,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void cargarFotoPerfil(String user) {
+        /*Obtiene la foto de la BBDD y la pone en el imageview*/
         Data datos = new Data.Builder().putString("usuario", user).build();
         OneTimeWorkRequest otwr = new OneTimeWorkRequest.Builder(phpSelectImagen.class).setInputData(datos).build();
         WorkManager.getInstance(MainActivity.this).getWorkInfoByIdLiveData(otwr.getId()).observe(MainActivity.this, new Observer<WorkInfo>() {

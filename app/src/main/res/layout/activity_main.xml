@@ -15,7 +15,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="@string/app_name"
-        app:srcCompat="@android:drawable/ic_menu_week"
+        app:srcCompat="@android:drawable/ic_menu_send"
         android:backgroundTint="@android:color/darker_gray"
         app:borderWidth="0dp"
         tools:ignore="DuplicateClickableBoundsCheck" />
