@@ -45,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     FloatingActionButton fab1;
     FloatingActionButton fab2;
     FloatingActionButton fab3;
+    FloatingActionButton fab4;
+
     boolean isFABOpen;
     Button btnLogout;
     ListView listView;
@@ -66,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
         fab1 = (FloatingActionButton) findViewById(R.id.fab1);
         fab2 = (FloatingActionButton) findViewById(R.id.fab2);
         fab3 = (FloatingActionButton) findViewById(R.id.fab3);
+        fab4 = (FloatingActionButton) findViewById(R.id.fab4);
 
         perfil = (ImageView) findViewById(R.id.perfil);
 
@@ -127,12 +130,34 @@ public class MainActivity extends AppCompatActivity {
         fab3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(MainActivity.this, "Se activa la camara y se cambia la foto de perfil", Toast.LENGTH_SHORT).show();
                 Intent elIntentFoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 startActivityForResult(elIntentFoto, 777);
                 closeFABMenu();
             }
 
+        });
+        fab4.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                Data datos = new Data.Builder().putString("usuario", user).build();
+                OneTimeWorkRequest otwr = new OneTimeWorkRequest.Builder(phpMensaje.class).setInputData(datos).build();
+                WorkManager.getInstance(MainActivity.this).getWorkInfoByIdLiveData(otwr.getId()).observe(MainActivity.this, new Observer<WorkInfo>() {
+                    @Override
+                    public void onChanged(WorkInfo workInfo) {
+                        if (workInfo != null && workInfo.getState().isFinished()) {
+                            Boolean resultadoPhp = workInfo.getOutputData().getBoolean("exito", false);
+                            if (resultadoPhp) {
+                                Intent i = getIntent();
+                                startActivity(i);
+                                finish();
+                            }
+                        }
+                    }
+                });
+                WorkManager.getInstance(MainActivity.this).enqueue(otwr);
+                closeFABMenu();
+            }
         });
         fab.setOnClickListener(new View.OnClickListener() {
             /*Comportamiento del botón flotante*/
@@ -315,6 +340,7 @@ public class MainActivity extends AppCompatActivity {
         fab1.animate().translationY(-getResources().getDimension(R.dimen.standard_75));
         fab2.animate().translationY(-getResources().getDimension(R.dimen.standard_125));
         fab3.animate().translationY(-getResources().getDimension(R.dimen.standard_175));
+        fab4.animate().translationY(-getResources().getDimension(R.dimen.standard_225));
     }
 
     private void closeFABMenu() {
@@ -322,13 +348,14 @@ public class MainActivity extends AppCompatActivity {
         fab1.animate().translationY(0);
         fab2.animate().translationY(0);
         fab3.animate().translationY(0);
+        fab4.animate().translationY(0);
     }
 
     private void insertImagen(String usuario, Bitmap laMiniatura) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         laMiniatura.compress(Bitmap.CompressFormat.PNG, 100, stream);
         byte[] fotoTransformada = stream.toByteArray();
-        if(gestorBD.getImagen(usuario)!=null){
+        if (gestorBD.getImagen(usuario) != null) {
             gestorBD.clearImagen(user);
         }
         gestorBD.insertarImagen(usuario, fotoTransformada);
@@ -366,9 +393,10 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("RESULTADO INSERT IMAGEN --> " + resultadoPhp);
                     if (resultadoPhp) {
                         byte[] decodificado = gestorBD.getImagen(user);
-                        Bitmap elBitmap = BitmapFactory.decodeByteArray(decodificado, 0, decodificado.length);
-                        perfil.setImageBitmap(elBitmap);
-
+                        if (decodificado != null) {
+                            Bitmap elBitmap = BitmapFactory.decodeByteArray(decodificado, 0, decodificado.length);
+                            perfil.setImageBitmap(elBitmap);
+                        }
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package com.example.myfitnessnotebook_v1;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.work.Constraints;
@@ -20,14 +21,20 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+
 import java.util.regex.*;
 
 public class SignUpActivity extends AppCompatActivity {
     EditText usernameText, psswd1Text, psswd2Text;
-    String username, psswd1, psswd2;
+    String username, psswd1, psswd2, token;
     miBD gestorBD;
     Button btnSU;
     Boolean logueado;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,11 +44,10 @@ public class SignUpActivity extends AppCompatActivity {
         usernameText = (EditText) findViewById(R.id.usernameSU);
         psswd1Text = (EditText) findViewById(R.id.passwordSU);
         psswd2Text = (EditText) findViewById(R.id.passwordSU2);
-
         username = usernameText.getText().toString();
         psswd1 = psswd1Text.getText().toString();
         psswd2 = psswd2Text.getText().toString();
-
+        FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(instanceIdResult -> token = instanceIdResult.getToken());
 
         gestorBD = new miBD(this, "MyFitnessNotebook", null, 1);
         /*Registramos el usuario en la BBDD del servidor */
@@ -50,14 +56,17 @@ public class SignUpActivity extends AppCompatActivity {
         btnSU.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                //guardamos el token
+
+
                 username = usernameText.getText().toString();
                 psswd1 = psswd1Text.getText().toString();
                 psswd2 = psswd2Text.getText().toString();
-                System.out.println("Email: " + username + " psswd1: " + psswd1 + " psswd2: " + psswd2);
+                System.out.println("Email: " + username + " psswd1: " + psswd1 + " psswd2: " + psswd2 + " token: "+token);
                 if (validarEmail(username)) {
                     if (validarContra(psswd1, psswd2)) {
                         System.out.println("Contraseña valida--> " + validarContra(psswd1, psswd2));
-                        Data datos = new Data.Builder().putString("user", username).putString("password", psswd1).build();
+                        Data datos = new Data.Builder().putString("user", username).putString("password", psswd1).putString("token", token).build();
                         OneTimeWorkRequest otwr = new OneTimeWorkRequest.Builder(phpRegistro.class).setInputData(datos).build();
                         WorkManager.getInstance(SignUpActivity.this).getWorkInfoByIdLiveData(otwr.getId()).observe(SignUpActivity.this, new Observer<WorkInfo>() {
                             @Override
@@ -66,7 +75,7 @@ public class SignUpActivity extends AppCompatActivity {
                                     Boolean resultadoPhp = workInfo.getOutputData().getBoolean("exito", false);
                                     System.out.println(resultadoPhp);
                                     if (resultadoPhp) {
-                                        Intent i = new Intent(SignUpActivity.this,MainActivity.class);
+                                        Intent i = new Intent(SignUpActivity.this, MainActivity.class);
                                         i.putExtra("user", username);
                                         startActivity(i);
                                         finish();
@@ -111,7 +120,7 @@ public class SignUpActivity extends AppCompatActivity {
                 }
             }
         }
-        System.out.println(pass1+" --> "+Pattern.compile(patron).matcher(pass1).matches());
+        System.out.println(pass1 + " --> " + Pattern.compile(patron).matcher(pass1).matches());
         return cumplePass;
 
     }
